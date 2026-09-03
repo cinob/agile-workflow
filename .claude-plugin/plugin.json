@@ -1,13 +1,13 @@
 {
   "name": "agile-workflow",
-  "description": "敏捷开发工作流：项目管理(agile-pm) + Vue3/TS前端(frontend-dev) + Node后端(backend-dev) + 全栈代码审查(code-reviewer) + 测试(test-writer)，会话开始时自动检查/初始化 docs/ 骨架，并提供探索式的 setup-agile-workflow 配置项目约定",
-  "version": "1.1.0",
+  "description": "契约先行、业务目标驱动的敏捷开发工作流：支持 Roadmap、版本与里程碑逐层确认、故事点与 Sprint 容量规划、前后端实现、全栈审查和测试闭环",
+  "version": "1.2.0",
   "author": {
     "name": "cinob",
     "url": "https://github.com/cinob"
   },
   "homepage": "https://github.com/cinob/agile-workflow",
   "repository": "https://github.com/cinob/agile-workflow",
-  "keywords": ["agile", "vue3", "nodejs", "code-review", "contract-first"],
+  "keywords": ["agile", "roadmap", "milestone", "capacity-planning", "vue3", "nodejs", "code-review", "contract-first"],
   "license": "MIT"
 }
