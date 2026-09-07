@@ -1,0 +1,13 @@
+{
+  "name": "agile-workflow",
+  "description": "轻量 MVP 敏捷编排：按 Must/Should/Could 聚焦核心闭环，一次确认后自动调度前后端实现、代码审查和测试",
+  "version": "2.0.0",
+  "author": {
+    "name": "cinob",
+    "url": "https://github.com/cinob"
+  },
+  "homepage": "https://github.com/cinob/agile-workflow",
+  "repository": "https://github.com/cinob/agile-workflow",
+  "keywords": ["agile", "mvp", "moscow", "orchestration", "frontend", "backend", "code-review", "testing"],
+  "license": "MIT"
+}

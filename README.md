@@ -1,33 +1,29 @@
 # agile-workflow
 
-Claude Code 插件：契约先行、业务目标驱动的敏捷开发工作流。5 个子 Agent 覆盖总体规划、项目管理、前后端实现、代码审查和测试全流程。
+Claude Code 轻量敏捷编排插件：先确认什么最重要，再用独立子 Agent 自动完成实现、审查和测试。
 
-## 特点
+它面向个人开发者和小团队，不复刻企业 Scrum 仪式。目标是让一个产品尽快形成可验证的核心闭环，而不是先生成大量 Roadmap、里程碑、故事点和容量表格。
 
-- **总体规划先行**：大型项目先讨论业务阶段、版本目标和里程碑，再拆成 Backlog 和多个 Sprint
-- **逐层人工确认**：版本目标、非目标、里程碑、故事点、容量和 Sprint 划分由 Agent 提建议，用户逐层确认；最终确认前不写入业务规划
-- **按业务闭环排期**：不按页面数量机械平均，使用可独立验收的业务条目和故事点规划每期范围
-- **容量门禁**：每个 Sprint 记录总容量、缓冲、可承诺容量和已规划点数，超载时必须裁剪、顺延或重规划
-- **里程碑驱动拆分**：业务里程碑落在 Sprint 中间时，可拆为 `Sprint 2A / 2B`，让里程碑成为正式收尾验收边界
-- **契约先行**：涉及新接口时，前端先设计接口类型（`DRAFT → CONFIRMED`），后端照已确认契约实现
-- **按需求维度审查**：把一个需求的前后端改动放在一起审查，重点检查接口字段、错误码和边界情况的一致性
-- **Sprint 中途分诊**：开发中冒出的 bug/新需求先判断是否阻断，再结合缓冲和里程碑影响决定是否插入
-- **自动初始化**：进入新项目自动补建 `docs/` 骨架，已有文件不覆盖；`setup-agile-workflow` 会先探索技术结构再请用户确认
+## 核心思路
 
-## 包含的 Agent
+1. **先列功能模块**：从用户要解决的问题出发，不按页面数量拆计划。
+2. **再定重要程度**：用户一次性把模块归入 Must / Should / Could（必要 / 次要 / 更次要）。
+3. **优先最小闭环**：Must 尚未完成时不夹带附加功能，除非它是真实依赖。
+4. **只确认一次执行范围**：开始一期时先看任务摘要，确认后不再逐阶段打断。
+5. **真实调用子 Agent**：前后端在安全时并行，之后依次代码审查和测试。
+6. **只保留两类文档**：Backlog + 当前/历史 Sprint 工作单。
 
-| Agent | 职责 |
-|---|---|
-| `agile-pm` | 总体规划、版本/里程碑讨论、需求拆解、故事点与容量规划、Sprint 分期/拆分、紧急事项分诊和收尾 |
-| `frontend-dev` | Vue 3 + TypeScript 实现，涉及新接口时先输出契约 |
-| `backend-dev` | Node.js 实现，严格按照已确认契约开发接口 |
-| `code-reviewer` | 全栈代码审查（只读），按需求维度检查前后端一致性、范围和里程碑证据 |
-| `test-writer` | 前后端测试编写与运行，提供业务验收证据 |
+## 一个衣橱小程序应该怎样排
 
-外加：
+插件会先识别产品核心，而不是把所有想法平均铺开：
 
-- `setup-agile-workflow` Skill：探索并配置项目的目录、契约和测试框架约定
-- `SessionStart` Hook：幂等检查并补建 `docs/` 骨架文件
+| 级别 | 示例模块 | 判断依据 |
+|---|---|---|
+| Must | 衣物录入、持久化、衣橱浏览筛选、详情编辑删除 | 没有这些就不是可用的衣橱管理产品 |
+| Should | 基础搭配管理、今日穿搭 | 提升核心体验，但不阻断衣橱管理闭环 |
+| Could | 金币、商城、成就、场景装饰、AI 顾问、天气推荐 | 核心价值验证后再投入的附加能力 |
+
+这只是 Agent 的建议，最终级别由用户决定。
 
 ## 安装
 
@@ -36,253 +32,219 @@ Claude Code 插件：契约先行、业务目标驱动的敏捷开发工作流�
 /plugin install agile-workflow@agile-workflow
 ```
 
-安装后重启或新开会话，`SessionStart` Hook 会逐项检查并补建缺失的规划文件和目录，不覆盖已有内容。
-
-## 插件版本与项目配置
-
-插件当前版本以 `.claude-plugin/plugin.json` 为唯一事实来源。每次 SessionStart 都会显示实际加载版本：
-
-```text
-[agile-workflow vX.Y.Z] 已就绪
-```
-
-`setup-agile-workflow` 经用户确认写入技术配置时，会在 `docs/agents/agile-config.md` 顶部记录该项目上次应用的工作流版本：
-
-```yaml
----
-agile-workflow-applied-version: "X.Y.Z"
----
-```
-
-SessionStart 会比较当前插件版本与项目应用版本：
-
-- 一致：明确显示“项目配置版本一致”。
-- 不一致：显示两个版本并建议按需重新运行 setup，但不会自动修改或迁移项目文件。
-- 旧配置没有版本：提示尚未记录，不自动补写。
-- 当前插件版本读取失败：显示 `v未知`，跳过比较，不影响骨架初始化。
-
-只有重新运行 `setup-agile-workflow`、查看完整草稿并确认写入后，项目应用版本才会更新。也可以使用 `/plugin list` 查看 Claude Code 当前安装的插件版本。
-
-仓库根目录的 `CHANGELOG.md` 是插件自身的发布日志；目标项目中的 `docs/CHANGELOG.md` 是各 Sprint 的业务交付记录，两者用途不同。
+安装或更新后需要新开 Claude Code 会话。
 
 ## 快速使用
 
-不需要记命令，直接使用自然语言，Agent 会根据意图自动接手：
+不需要记专用命令，直接说自然语言。
+
+### 1. 规划功能
 
 ```text
-配置一下敏捷开发工作流
-    → setup-agile-workflow 探索项目结构，确认后写入 docs/agents/agile-config.md
-
-我要实现一个商城，包含商品、购物车、结算、支付、订单等 10 个页面，先做总体规划
-    → agile-pm 逐层讨论版本目标、业务里程碑、故事点、容量和 Sprint 划分
-
-用户登录功能，需要记住登录状态 7 天
-    → agile-pm 拆解局部需求，写入 docs/backlog.md
-
-开始 Sprint 2A
-    → agile-pm 按 Roadmap 和容量门禁生成 docs/sprints/sprint-02a.md
-
-实现登录接口的前端部分
-    → frontend-dev 先定义契约；确认后可基于 mock 开发 UI
-
-实现登录接口的后端部分
-    → backend-dev 按 CONFIRMED 契约实现
-
-审查一下这个需求
-    → code-reviewer 按需求维度整体审查，只读不修改
-
-补一下测试
-    → test-writer 编写并实际运行测试
-
-结束本期
-    → agile-pm 核实产物、审查和测试，更新 Roadmap 与 CHANGELOG；业务里程碑仍需用户确认
-
-发现一个 bug，登录接口偶尔返回 500
-    → agile-pm 分诊并计算缓冲；不足时要求等量换出或重规划
+帮我规划这个衣橱小程序的功能
 ```
 
-也可以显式点名：
+`agile` Skill 会调用独立的 `agile-pm`，展示：
+
+- 功能模块
+- 用户可感知结果
+- 真实依赖
+- 建议的 Must / Should / Could
+- 建议理由
+
+用户可以一次性调整，也可以回复：
 
 ```text
-用 code-reviewer 检查一下这次改动
+按建议分级
 ```
 
-## 工作流程
+随后插件给出完整 Backlog 草稿，并只请求一次最终写入确认：
 
 ```text
-setup-agile-workflow（一次性技术配置）
+确认写入 Backlog
+```
+
+### 2. 开始一期
+
+```text
+开始一期
+```
+
+插件从未完成 Must 中选择一个最小可交付闭环，展示任务、角色、依赖、验收条件和允许修改范围。确认前不会创建工作单，也不会启动开发 Agent。
+
+确认：
+
+```text
+确认执行 Sprint 1
+```
+
+确认后自动推进：
+
+```text
+主线程写入已确认的 Sprint 工作单
         │
-        ▼
-agile-pm 总体规划（大型项目）
-        │
-        ├─ 业务阶段 / 版本目标 / 非目标 ──→ 用户确认
-        ├─ 业务里程碑 / 验收条件 ─────────→ 用户确认
-        ├─ 业务切片 / 故事点 ─────────────→ 用户确认
-        ├─ 容量 / 缓冲 / Sprint 划分 ─────→ 用户确认
-        └─ 完整草稿最终确认 ──────────────→ docs/roadmap.md + docs/backlog.md
-        │
-        ▼
-agile-pm 开工一期 ──→ docs/sprints/sprint-<id>.md
-        │
-        ├─ 新接口：frontend-dev 出契约（DRAFT）→ 人工确认（CONFIRMED）
-        │
-        ├─ backend-dev 按契约实现 ─┐
-        ├─ frontend-dev 基于契约实现 UI ─┤ 可并行
-        │                              │
-        ▼                              ▼
-code-reviewer 按需求整体审查（只读）
-        │
-        ▼
-test-writer 编写并运行测试
-        │
-        ▼
-agile-pm 收尾 ──→ Roadmap 状态 + docs/CHANGELOG.md
-        │
-        ├─ 若为里程碑边界：用户确认业务验收
-        └─ 中途 bug/新需求：使用缓冲、等量换出或受控重规划
+        ├─ frontend-dev ─┐
+        └─ backend-dev  ─┴─ 依赖满足且修改范围互斥时并行
+                 │
+                 ▼
+          code-reviewer
+                 │ PASS
+                 ▼
+           test-writer
+                 │ PASS
+                 ▼
+        主线程同步结果
 ```
 
-## 总体规划：从页面列表到业务版本
+实现、审查和测试之间不会重复请求确认。只有产品范围变化、破坏性操作、权限被拒或自动返修两轮仍失败时才暂停询问。
 
-当用户提出“实现一个有 10 个页面的商城”时，`agile-pm` 不会简单地安排“每期 3 个页面”，而是先识别业务闭环，例如：
-
-| 版本/阶段 | 业务目标 | 可能包含的页面与能力 |
-|---|---|---|
-| V1 商品浏览 | 用户能够发现并了解商品 | 首页、分类、商品列表、商品详情 |
-| V2 购物决策 | 用户能够选择商品并准备结算 | 登录、购物车、收货地址、结算 |
-| V3 交易闭环 | 用户能够付款并查看交易结果 | 支付、支付结果、订单列表/详情 |
-
-具体版本名称、成功条件、非目标和里程碑都只是 Agent 的建议，必须由用户逐层确认。
-
-确认顺序为：
+### 3. 继续或结束一期
 
 ```text
-业务阶段和版本目标
-    ↓ 用户确认
-业务里程碑和验收条件
-    ↓ 用户确认
-可独立验收的业务条目和故事点
-    ↓ 用户确认
-容量、缓冲和 Sprint 划分
-    ↓ 用户确认
-完整 Roadmap 最终预览
-    ↓ 用户明确确认
-写入 Roadmap 和 Backlog
+继续一期
+结束一期
 ```
 
-修改上游版本目标后，受影响的里程碑、估算和 Sprint 划分需要重新确认，不能只局部改一句话。
+“继续一期”只执行尚未完成的任务；“结束一期”核对实现、审查和测试证据，只有质量门禁通过时才把 Sprint 标记为已结束。
 
-## 故事点与容量
+## 子 Agent 确实是独立上下文
 
-故事点使用 Fibonacci 序列：
+插件包含 5 个 Agent：
+
+| Agent | 职责 |
+|---|---|
+| `agile-pm` | 只读分析功能模块、优先级、依赖并生成 Backlog/Sprint 草稿 |
+| `frontend-dev` | 项目实际技术栈下的客户端、页面与交互实现 |
+| `backend-dev` | 项目实际技术栈下的服务端、数据层与接口实现 |
+| `code-reviewer` | 只读整体审查：验收、跨端一致性、正确性、安全性和范围 |
+| `test-writer` | 沿用现有或平台内置测试能力，补充并实际运行验证 |
+
+每个子 Agent 都是新的独立上下文，只收到主线程传入的 Sprint 目标、任务、依赖、验收标准和文件范围。它们共享同一个工作目录，因此插件只会在修改范围明确互斥时并行写代码。
+
+运行时会明确显示：
 
 ```text
-1 / 2 / 3 / 5 / 8 / 13
+[启动] frontend-dev — T2 — src/pages/wardrobe/**
+[启动] backend-dev — T1 — server/garments/**
+[并行] 两个 Agent 的依赖已满足，修改范围互不重叠
+[完成] backend-dev — 局部检查通过
+[完成] frontend-dev — 类型检查通过
+[启动] code-reviewer — 整体审查 Sprint 1
 ```
 
-故事点只计算可独立验收的父业务条目，不给 `[FE]`、`[BE]`、`[TEST]` 重复计点。大于 8 点的条目优先继续拆分。
+如果没有看到 Agent 启动卡片或这些状态，先检查插件是否启用。
 
-每个 Sprint 记录：
+## 并行规则
 
-```text
-总容量
-- 缓冲
-= 可承诺容量
-```
+frontend-dev 与 backend-dev 只有同时满足以下条件才并行：
 
-并强制满足：
+- 没有未满足的任务依赖。
+- 允许修改路径没有交集。
+- 不会同时修改共享 schema、OpenAPI、接口类型、数据库迁移、路由总表、包清单、锁文件或根级配置。
+- 新接口已经有稳定的项目原生边界。
+- 用户现有未提交改动不与任务范围冲突。
 
-```text
-已规划点数 <= 可承诺容量
-```
+无法证明安全时默认串行。并行的目标是缩短等待，不是制造文件冲突。
 
-初次没有历史速度时，Agent 会根据团队人数、可用时间和并行限制提出临时容量建议，用户确认后标记为 `PROVISIONAL`。缓冲可以建议为总容量的 15%–20%，但不会自动替用户决定。
+## 接口边界
 
-## 业务里程碑落在 Sprint 中间
+插件优先沿用项目已有的 OpenAPI、schema、共享类型或接口约定。
 
-如果原计划有 5 个 Sprint，但关键业务验收节点落在 Sprint 2 的中间，工作流不会使用模糊的 “Sprint 1.5”，而是建议：
+项目还没有稳定接口边界时，会先指定一个 Agent 作为唯一写入者建立最小边界，再启动另一端。不会额外创建 `docs/contracts/`，也没有 `DRAFT → CONFIRMED → IMPLEMENTED/MISMATCH` 状态机。
 
-```text
-Sprint 1
-    ↓
-Sprint 2A —— 完成业务里程碑 M1，并正式收尾验收
-    ↓
-Sprint 2B —— 继续里程碑后的工作
-    ↓
-Sprint 3 ...
-```
-
-对应文件为：
-
-```text
-docs/sprints/sprint-02a.md
-docs/sprints/sprint-02b.md
-```
-
-拆分前必须先拆开跨边界的大任务，再重新确认 2A/2B 的容量和缓冲。原工作单若已经存在会保留并标记 `SPLIT` 或 `SUPERSEDED`，不会删除历史。
-
-## 契约先行
-
-涉及新接口的父业务条目标记 `[NEEDS-API]`：
-
-1. `frontend-dev` 根据验收标准定义 endpoint、method、request/response 类型和错误码。
-2. 写入契约，状态为 `DRAFT`，并停下等待确认。
-3. 用户或主线程确认后改为 `CONFIRMED`。
-4. `backend-dev` 只在契约为 `CONFIRMED` 时开始实现，不能私自修改契约。
-5. 前端可基于已确认契约使用 mock 数据继续 UI，实现不必等待后端。
-6. 联调发现偏差时标记 `MISMATCH`，不能静默兼容。
-
-## Sprint 中途分诊
-
-- **阻断当前任务的 bug**：视为当前任务的一部分，先消耗缓冲；若影响里程碑则进入重规划。
-- **非阻断普通 bug**：默认写入 Backlog，不触碰当前 Sprint。
-- **新需求**：默认进入后续规划，不自动扩大当前版本或 Sprint。
-- **明确要求紧急插入**：记录点数，先用缓冲；缓冲不足时移出等量未开始工作，或将 Roadmap 标记为 `NEEDS_REPLAN` 后重新确认。
-
-## 目录结构（安装后在目标项目生成）
+## 目标项目只生成两类文档
 
 ```text
 docs/
-  roadmap.md              总体规划：版本、业务里程碑、Sprint 映射和容量
-  backlog.md              具体业务条目：优先级、依赖、故事点和规划映射
+  backlog.md
   sprints/
-    sprint-01.md          普通 Sprint 工作单
-    sprint-02a.md         里程碑驱动的子 Sprint 工作单
-  contracts/<feature>.ts  接口契约（DRAFT → CONFIRMED → IMPLEMENTED / MISMATCH）
-  agents/agile-config.md  项目技术约定，由 setup-agile-workflow 生成
-  CHANGELOG.md            每期实际交付、延期、容量和里程碑结果
+    sprint-1.md
+    sprint-2.md
 ```
 
-核心状态：
+### Backlog
+
+Backlog 只记录产品结果：
+
+```markdown
+## Must
+
+- [ ] B001 衣物录入
+  - 用户结果：用户可以创建并保存一件真实衣物。
+  - 依赖：无
+  - 验收：重新进入应用后仍能看到该衣物。
+```
+
+章节表示优先级，条目顺序表示排期。不会记录故事点、容量、版本、里程碑或技术子任务。
+
+### Sprint
+
+Sprint 只记录执行所需信息：
+
+```markdown
+- [ ] T1 [BE] 建立衣物保存与读取能力
+  - 顺序：1
+  - 依赖：无
+  - 完成条件：满足 B001 的持久化验收。
+  - 允许修改：server/garments/**
+```
+
+另有 Review/Test 两个质量门禁和简短结果。不会复制完整日志或在多个文件重复业务说明。
+
+## 插件未生效时
+
+以下命令在系统终端中执行。查看状态：
+
+```bash
+claude plugin list
+```
+
+如果显示 `disabled`：
+
+```bash
+claude plugin enable agile-workflow@agile-workflow
+```
+
+更新本地安装副本：
+
+```bash
+claude plugin update agile-workflow@agile-workflow
+```
+
+然后退出并新开 Claude Code 会话。插件组件只在会话启动时加载，旧会话不会自动获得新 Skill/Agent。
+
+如果自然语言没有触发编排，可使用排障入口：
 
 ```text
-Roadmap：UNINITIALIZED → CONFIRMED → ACTIVE → COMPLETED
-                              ↘ NEEDS_REPLAN
-
-里程碑：PLANNED → ACTIVE → ACCEPTED
-                         ↘ AT_RISK / DEFERRED
-
-Sprint：PLANNED → ACTIVE → CLOSED
-                      ↘ SPLIT / SUPERSEDED
+/agile-workflow:agile 开始一期
 ```
 
-## 向后兼容
+正常使用不要求记这个命令。
 
-- 没有 Roadmap 的旧项目仍可继续处理小需求和纯数字 Sprint。
-- 已有 `sprint-1.md` 不要求重命名。
-- 新工作单统一推荐补零，并支持字母后缀。
-- 已完成的 Backlog 和 Changelog 历史不会因引入 Roadmap 被重写。
-- 信息不足的旧任务标记为“待映射/待估算”，不会由 Agent 静默猜测。
+## 从 1.2.0 升级
 
-## 关键设计约束
+2.0.0 是破坏性精简：
 
-- `agile-pm` 只负责业务规划和状态管理，不写实现代码，也不替用户决定版本目标或业务验收结果。
-- 最终确认前，不写入版本、里程碑、故事点和 Sprint 映射。
-- 契约结构变更必须走“提出建议 → 确认 → 修改”，`backend-dev` 不能私自改契约。
-- `code-reviewer` 只读；发现范围外问题只报告，不修改。
-- `test-writer` 不修改业务代码；在 Sprint 文件中只能勾选测试通过项。
-- 测试通过只是业务验收证据，不等于里程碑自动 `ACCEPTED`。
-- 新需求默认不插入当前 Sprint；紧急插入必须量化容量和里程碑影响。
+- 不再读取或更新 Roadmap、业务版本、里程碑、故事点、容量、缓冲和字母子 Sprint。
+- 不再运行 SessionStart Hook 自动创建文档。
+- 不再使用 `docs/agents/agile-config.md` 追踪项目应用版本。
+- 不会自动删除旧项目中的任何文件。
+- 旧版 P0/P1/P2 Backlog 不会被静默映射；“开始一期”前会重新确认 Must/Should/Could。
+- 旧版 `ACTIVE`、`sprint-01.md` 和字母后缀工作单会被识别，避免产生第二份冲突的活跃 Sprint。
+- 重新规划时会先展示精简 Backlog 草稿，只有用户确认后才写入。
+
+`/grill-with-docs` 是另一套会主动创建 ADR 和术语表的访谈 Skill；这些文件不属于 agile-workflow 的最小产物。组合使用时，文档数量会相应增加。
+
+## 设计约束
+
+- 用户决定产品优先级，Agent 只给建议。
+- 确认前不写 Backlog，不创建 Sprint，不启动开发 Agent。
+- 确认执行后自动完成实现 → 审查 → 测试，不重复确认。
+- 只有主线程串行修改 Backlog 和 Sprint；所有子 Agent 都不得改工作流文档。
+- 审查未通过时不启动测试。
+- 测试暴露生产问题后必须重新审查再重跑。
+- 不硬编码 Vue、Node.js 或测试框架，始终沿用项目实际技术栈。
+- 不为了“敏捷形式”牺牲产品核心价值。
 
 ## License
 

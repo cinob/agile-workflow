@@ -1,14 +1,14 @@
 {
   "name": "agile-workflow",
-  "description": "面向 Claude Code 的契约先行敏捷工作流，支持 Roadmap、业务里程碑、Sprint 容量规划和全栈交付闭环",
+  "description": "面向 Claude Code 的轻量 MVP 敏捷编排：先确定核心功能优先级，再自动完成实现、审查和测试",
   "owner": {
     "name": "cinob"
   },
   "plugins": [
     {
       "name": "agile-workflow",
-      "source": ".",
-      "description": "业务目标驱动的敏捷开发工作流：agile-pm（Roadmap/里程碑/容量规划）+ frontend-dev（Vue3/TS）+ backend-dev（Node）+ code-reviewer（全栈审查）+ test-writer（测试）"
+      "source": "./plugin",
+      "description": "Must/Should/Could 功能排序 + Backlog/Sprint 最小文档 + 独立前后端 Agent 安全并行 + 审查测试闭环"
     }
   ]
 }
